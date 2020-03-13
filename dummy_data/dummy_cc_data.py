@@ -2,8 +2,13 @@
 #
 # Generates dummy credit card data to be used
 # for testing dlp functionality. The script
-# assumes two files are present in the local
-# directory - family_names.txt and first_names.txt.
+# assumes a folder called data with
+# four files is present in the local
+# directory - 
+# data/family_names.txt
+# data/first_names.txt
+# data/cities_states.csv
+# data/street_names.txt
 # The script randomly selects combinations from
 # these files for the cardholder names.
 #
@@ -65,15 +70,15 @@ class CreditCardGenerator:
             sys.exit(1)
 
         # read in family and first names, street names, cities/states
-        with open('family_names.txt', 'r') as fd:
+        with open('data/family_names.txt', 'r') as fd:
             self.family_names = fd.read().splitlines()
-        with open('first_names.txt', 'r') as fd:
+        with open('data/first_names.txt', 'r') as fd:
             self.first_names = fd.read().splitlines()
-        with open('street_names.txt', 'r') as fd:
+        with open('data/street_names.txt', 'r') as fd:
             self.street_names = fd.read().splitlines()
         self.cities_states = []
         self.city_pop = []
-        with open('cities_states.csv', 'r', newline='') as csv_fd:
+        with open('data/cities_states.csv', 'r', newline='') as csv_fd:
             reader = csv.reader(csv_fd)
             for row in reader:
                 self.cities_states.append([row[0], row[2]])

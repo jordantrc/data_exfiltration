@@ -1,3 +1,6 @@
 *.csv
 *.tsv
 *.xlsx
+dummy_data/*.csv
+dummy_data/*.csv
+dummy_data/*.xlsx
