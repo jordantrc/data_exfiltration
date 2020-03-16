@@ -77,8 +77,13 @@ done
 if [ "$enable_dns" = true ]; then
     interface=$(echo "$dns_param" | cut -d ":" -f 1)
     domain=$(echo "$dns_param" | cut -d ":" -f 2)
+    if [ ! -z "$source_ip" ]; then
+        source_filter="host $source_ip"
+    else
+        source_filter=""
+    fi
     echo "[*] starting DNS server for domain $domain"
-    tshark -i $interface -f "udp port 53" -Y "dns.qry.type == 1 and dns.flags.response == 0 and dns.qry.name matches "$domain"" >> dns_data &
+    tshark -i $interface -f "$source_filter udp port 53" -Y "dns.qry.type == 1 and dns.flags.response == 0 and dns.qry.name matches "$domain"" >> dns_data &
 fi
 
 if [ "$enable_ftp" = true ]; then
