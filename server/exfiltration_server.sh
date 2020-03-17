@@ -84,7 +84,7 @@ if [ "$enable_dns" = true ]; then
     fi
     echo "[*] starting DNS server for domain $domain"
     echo "[*] once complete, use the below command to get original file:"
-    echo "[*] cat dns_data | cut -d 'A' -f 2 | cut -d ' ' -f 2 | cut -d '.' -f 1 | sort | grep '-' | uniq | cut -d "-" -f 2 | xxd -p -r >
+    echo "[*] cat dns_data | cut -d 'A' -f 2 | cut -d ' ' -f 2 | cut -d '.' -f 1 | sort | grep '-' | uniq | cut -d "-" -f 2 | xxd -p -r > file"
     tshark -i $interface -f "$source_filter udp port 53" -Y "dns.qry.type == 1 and dns.flags.response == 0 and dns.qry.name matches "$domain"" >> dns_data &
 fi
 
