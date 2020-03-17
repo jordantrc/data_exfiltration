@@ -29,8 +29,8 @@ def main():
     file_fd = open(file_path, 'rb')
 
     # login to the server
-    ftp = FTP(server, user=username, passwd=password)
-    ftp.login()
+    ftp = FTP(server)
+    ftp.login(user=username, passwd=password)
 
     # upload the file
     ftp_command = "STOR %s" % filename
