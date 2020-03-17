@@ -94,9 +94,9 @@ if [ "$enable_ftp" = true ]; then
     password=$(echo "$creds" | cut -d ":" -f 2)
     echo "[*] starting FTP server with credential $username:$password"
     if [ "${#source_ip}" -gt 0 ]; then
-        python ftp_server.py -s $source_ip -u $username -p $password . &
+        python3 ftp_server.py -s $source_ip -u $username -p $password . &
     else
-        python ftp_server.py -u $username -p $password . &
+        python3 ftp_server.py -u $username -p $password . &
     fi
 fi
 
