@@ -55,7 +55,7 @@ while getopts "hs:d:f:h:s:i" OPTION; do
 		f ) enable_ftp=true; ftp_param="$OPTARG";;
 		t ) enable_http=true; http_param="$OPTARG";;
 		s ) enable_https=true; https_param="$OPTARG";;
-		i ) enable_icmp=true; icmp_listen=true;;
+		i ) enable_icmp=true; icmp_interf="$OPTARG";;
 		\?) echo "Unknown option: -$OPTARG" >&2; exit 1;;
 		: ) echo "Missing argument for -$OPTARG" >&2; exit 1;;
 		* ) echo "Invalid option provided: -$OPTARG" >&2; exit 1;;
@@ -82,7 +82,7 @@ if [ "$enable_dns" = true ]; then
     else
         source_filter=""
     fi
-    echo "[*] starting DNS server for domain $domain"
+    echo "[*] starting DNS listener for domain $domain"
     echo "[*] once complete, use the below command to get original file:"
     echo "[*] cat dns_data | cut -d 'A' -f 2 | cut -d ' ' -f 2 | cut -d '.' -f 1 | sort | grep '-' | uniq | cut -d "-" -f 2 | xxd -p -r > file"
     tshark -i $interface -f "$source_filter udp port 53" -Y "dns.qry.type == 1 and dns.flags.response == 0 and dns.qry.name matches "$domain"" >> dns_data &
@@ -93,11 +93,18 @@ if [ "$enable_ftp" = true ]; then
     username=$(echo "$creds" | cut -d ":" -f 1)
     password=$(echo "$creds" | cut -d ":" -f 2)
     echo "[*] starting FTP server with credential $username:$password"
-    if [ "${#source_ip}" -gt 0 ]; then
-        python3 ftp_server.py -s $source_ip -u $username -p $password . &
+    python3 ftp_server.py -u $username -p $password . &
+fi
+
+if [ "$enable_icmp" = true ]; then
+    interface=$icmp_interf
+    if [ ! -z "$source_ip" ]; then
+        source_filter="host $source_ip"
     else
-        python3 ftp_server.py -u $username -p $password . &
+        source_filter=""
     fi
+    echo "[*] starting ICMP listener"
+    tshark -i $interface -f "$source_filter icmp" 
 fi
 
 # wait for children to exit
