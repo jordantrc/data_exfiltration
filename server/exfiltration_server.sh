@@ -47,7 +47,7 @@ if [ $EUID -ne 0 ]; then
 fi
 
 source_ip=""
-while getopts "hs:d:f:h:s:i" OPTION; do
+while getopts "hs:d:f:h:s:i:" OPTION; do
 	case "$OPTION" in
 		s ) source_ip="$OPTARG";;
         h ) usage;;
@@ -73,19 +73,20 @@ for u in "${utils[@]}"; do
     fi
 done
 
+if [ ! -z "$source_ip" ]; then
+    source_filter="src host $source_ip"
+else
+    source_filter=""
+fi
+
 # start servers as background processes
 if [ "$enable_dns" = true ]; then
     interface=$(echo "$dns_param" | cut -d ":" -f 1)
     domain=$(echo "$dns_param" | cut -d ":" -f 2)
-    if [ ! -z "$source_ip" ]; then
-        source_filter="host $source_ip"
-    else
-        source_filter=""
-    fi
     echo "[*] starting DNS listener for domain $domain"
     echo "[*] once complete, use the below command to get original file:"
     echo "[*] cat dns_data | cut -d 'A' -f 2 | cut -d ' ' -f 2 | cut -d '.' -f 1 | sort | grep '-' | uniq | cut -d "-" -f 2 | xxd -p -r > file"
-    tshark -i $interface -f "$source_filter udp port 53" -Y "dns.qry.type == 1 and dns.flags.response == 0 and dns.qry.name matches "$domain"" >> dns_data &
+    tshark -i $interface -f "$source_filter and udp port 53" -Y "dns.qry.type == 1 and dns.flags.response == 0 and dns.qry.name matches "$domain"" >> dns_data &
 fi
 
 if [ "$enable_ftp" = true ]; then
@@ -98,13 +99,9 @@ fi
 
 if [ "$enable_icmp" = true ]; then
     interface=$icmp_interf
-    if [ ! -z "$source_ip" ]; then
-        source_filter="host $source_ip"
-    else
-        source_filter=""
-    fi
     echo "[*] starting ICMP listener"
-    tshark -i $interface -f "$source_filter icmp" 
+    echo "[*] once complete, use the icmp_pcap_extract.py script"
+    tcpdump -i $interface -w icmp_data.pcap "$source_filter and icmp" 
 fi
 
 # wait for children to exit
