@@ -18,7 +18,7 @@ usage() {
     echo "Usage:"
     echo "exfiltration_server.sh [-s source] [service switch] [service parameters] [[service switch] [service parameters]]..."
     echo "  -h  print this help message and exit"
-    echo "  -s  only accept connections from the given source address"
+    echo "  -o  only accept connections from the given source address"
     echo "service switches and options:"
     echo "  -d  run a DNS service"
     echo "      service parameters:"
@@ -47,9 +47,9 @@ if [ $EUID -ne 0 ]; then
 fi
 
 source_ip=""
-while getopts "hs:d:f:h:s:i:" OPTION; do
+while getopts "ho:d:f:h:s:i:" OPTION; do
 	case "$OPTION" in
-		s ) source_ip="$OPTARG";;
+		o ) source_ip="$OPTARG";;
         h ) usage;;
 		d ) enable_dns=true; dns_param="$OPTARG";;
 		f ) enable_ftp=true; ftp_param="$OPTARG";;
@@ -74,7 +74,7 @@ for u in "${utils[@]}"; do
 done
 
 if [ ! -z "$source_ip" ]; then
-    source_filter="src host $source_ip"
+    source_filter="src host $source_ip and"
 else
     source_filter=""
 fi
@@ -86,7 +86,7 @@ if [ "$enable_dns" = true ]; then
     echo "[*] starting DNS listener for domain $domain"
     echo "[*] once complete, use the below command to get original file:"
     echo "[*] cat dns_data | cut -d 'A' -f 2 | cut -d ' ' -f 2 | cut -d '.' -f 1 | sort | grep '-' | uniq | cut -d "-" -f 2 | xxd -p -r > file"
-    tshark -i $interface -f "$source_filter and udp port 53" -Y "dns.qry.type == 1 and dns.flags.response == 0 and dns.qry.name matches "$domain"" >> dns_data &
+    tshark -i $interface -f "$source_filter udp port 53" -Y "dns.qry.type == 1 and dns.flags.response == 0 and dns.qry.name matches '$domain'" >> dns_data &
 fi
 
 if [ "$enable_ftp" = true ]; then
