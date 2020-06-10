@@ -101,7 +101,7 @@ if [ "$enable_icmp" = true ]; then
     interface=$icmp_interf
     echo "[*] starting ICMP listener"
     echo "[*] once complete, use the icmp_pcap_extract.py script"
-    tcpdump -i $interface -w icmp_data.pcap "$source_filter icmp" 
+    tcpdump -i $interface -w icmp_data.pcap $source_filter icmp 
 fi
 
 # wait for children to exit
