@@ -85,7 +85,7 @@ if [ "$enable_dns" = true ]; then
     domain=$(echo "$dns_param" | cut -d ":" -f 2)
     echo "[*] starting DNS listener for domain $domain"
     echo "[*] once complete, use the below command to get original file:"
-    echo "[*] cat dns_data | cut -d 'A' -f 2 | cut -d ' ' -f 2 | cut -d '.' -f 1 | sort | grep '-' | uniq | cut -d "-" -f 2 | xxd -p -r > file"
+    echo "[*] cat dns_data | awk '{print \$12}' | cut -d '.' -f 1 | sort | grep '-' | uniq | cut -d '-' -f 2 | xxd -p -r > file"
     tshark -i $interface -f "$source_filter udp port 53" -Y "dns.qry.type == 1 and dns.flags.response == 0 and dns.qry.name matches '$domain'" >> dns_data &
 fi
 
@@ -101,7 +101,7 @@ if [ "$enable_icmp" = true ]; then
     interface=$icmp_interf
     echo "[*] starting ICMP listener"
     echo "[*] once complete, use the icmp_pcap_extract.py script"
-    tcpdump -i $interface -w icmp_data.pcap "$source_filter and icmp" 
+    tcpdump -i $interface -w icmp_data.pcap "$source_filter icmp" 
 fi
 
 # wait for children to exit
