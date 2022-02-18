@@ -19,7 +19,7 @@ import csv
 import random
 import string
 import sys
-import xlsxwriter
+import openpyxl
 from datetime import date
 
 
@@ -55,16 +55,11 @@ class CreditCardGenerator:
             self.writer = csv.writer(self.fd, delimiter="\t")
             self.writer.writerow(header_fields)
         elif self.format == 'excel':
-            self.workbook = xlsxwriter.Workbook('output.xlsx')
+            self.workbook = openpyxl.Workbook()
             print(self.workbook)
-            self.worksheet = self.workbook.add_worksheet()
+            self.worksheet = self.workbook.active
             print(self.worksheet)
-            self.current_row = 0
-            col = 0
-            for h in header_fields:
-                self.worksheet.write(self.current_row, col, h)
-                col += 1
-            self.current_row += 1
+            self.worksheet.append(header_fields)
         else:
             print("[-] unsupported format %s" % self.format)
             sys.exit(1)
@@ -185,18 +180,14 @@ class CreditCardGenerator:
         if self.format == 'csv' or self.format == 'tsv':
             self.writer.writerow(record)
         elif self.format == 'excel':
-            col = 0
-            for r in record:
-                self.worksheet.write(self.current_row, col, r)
-                col += 1
-            self.current_row += 1
+            self.worksheet.append(record)
     
     def cleanup(self):
         # close files
         if self.writer is not None:
             self.fd.close()
         if self.workbook is not None:
-            self.workbook.close()
+            self.workbook.save("output.xlsx")
 
 
 def main():

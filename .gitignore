@@ -4,3 +4,6 @@
 dummy_data/*.csv
 dummy_data/*.csv
 dummy_data/*.xlsx
+
+.DS_STORE
+*/.DS_STORE
